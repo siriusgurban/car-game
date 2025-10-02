@@ -14,23 +14,29 @@ useGLTF.preload("/models/map.glb");
 
 // This component is INSIDE the provider, so useGame() works here
 function GameCanvas() {
-  const { carPosition } = useGame(); // ✅ now safe
-const carRotation = useRef(Math.PI / -1.4);
+  const { carPosition, checkpoints } = useGame(); // ✅ now safe
+  const carRotation = useRef(Math.PI / -1.4);
   return (
+
+
     <Canvas
       shadows
       style={{ width: "100%", height: "100%" }}
       camera={{ fov: 75, position: [0, 5, -10] }}
     >
+      {console.log("Car position:", carPosition)}
       <ambientLight intensity={0.5} />
       <directionalLight position={[10, 10, 5]} intensity={1} />
 
-        <gridHelper args={[200, 200, "white", "gray"]} rotation={[0, 0, 0]} position={[25, 0, 50]} />
+      <gridHelper args={[200, 200, "white", "gray"]} rotation={[0, 0, 0]} position={[25, 0, 50]} />
 
       <Map />
       <Car rotationRef={carRotation} />
-      <Checkpoint id={1} position={[5, 0]} />
-      <Checkpoint id={2} position={[10, 0]} />
+      {checkpoints.map((cp) => (
+        <Checkpoint key={cp.id} id={cp.id} position={cp.position}
+          rotation={cp.rotation || 0} // add rotation in radians
+        />
+      ))}
       <FollowCamera carPosition={carPosition} rotationRef={carRotation} distance={10} height={5} />
     </Canvas>
   );
