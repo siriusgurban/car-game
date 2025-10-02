@@ -8,37 +8,39 @@ import * as THREE from "three";
 export default function Car({ rotationRef }) {
   const mesh = useRef();
   const { carPosition, setCarPosition } = useGame();
-  const { controls, speed, rotationSpeed } = useCarControls();
+  const { controls } = useCarControls();
 
   const gltf = useGLTF("/models/car.glb");
+  const rotation = rotationRef || useRef(0);
+  const velocity = useRef(0);
 
-  const rotation = rotationRef || useRef(0); // use external ref if provided
+  const maxSpeed = 1; // units per frame
+  const acceleration = 0.01;
+  const friction = 0.02;
+  const rotationSpeed = 0.03;
 
   useFrame(() => {
     let x = carPosition[0];
     let z = carPosition[1];
 
+    // Accelerate or brake
+    if (controls.forward) velocity.current += acceleration;
+    else if (controls.backward) velocity.current -= acceleration;
+    else velocity.current *= 1 - friction; // natural slow down
+
+    // Clamp speed
+    if (velocity.current > maxSpeed) velocity.current = maxSpeed;
+    if (velocity.current < -maxSpeed / 2) velocity.current = -maxSpeed / 2; // backward slower
+
     // Rotate car
-    if (controls.left) rotation.current += rotationSpeed;
-    if (controls.right) rotation.current -= rotationSpeed;
+    if (controls.left) rotation.current += rotationSpeed * (velocity.current >= 0 ? 1 : -1);
+    if (controls.right) rotation.current -= rotationSpeed * (velocity.current >= 0 ? 1 : -1);
 
-    // Move car forward/backward based on rotation
-    const direction = new THREE.Vector3(
-      Math.sin(rotation.current),
-      0,
-      Math.cos(rotation.current)
-    );
+    // Move car
+    const direction = new THREE.Vector3(Math.sin(rotation.current), 0, Math.cos(rotation.current));
+    x += direction.x * velocity.current;
+    z += direction.z * velocity.current;
 
-    if (controls.forward) {
-      x += direction.x * speed;
-      z += direction.z * speed;
-    }
-    if (controls.backward) {
-      x -= direction.x * speed;
-      z -= direction.z * speed;
-    }
-
-    // Update car position in context
     setCarPosition([x, z]);
 
     // Update mesh
