@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useGame } from "../context/GameContext";
 import { useGLTF } from "@react-three/drei";
@@ -7,30 +7,35 @@ import * as THREE from "three";
 
 export default function Car({ rotationRef }) {
   const mesh = useRef();
-  const { carPosition, setCarPosition } = useGame();
+  const { carPosition, setCarPosition, setCarVelocity, carVelocity } = useGame();
   const { controls } = useCarControls();
 
   const gltf = useGLTF("/models/car.glb");
   const rotation = rotationRef || useRef(0);
   const velocity = useRef(0);
+  const smoothPosition = useRef(new THREE.Vector3(carPosition[0], 1.3, carPosition[1]));
+  const targetPosition = useRef(new THREE.Vector3(carPosition[0], 1.3, carPosition[1]));
 
-  const maxSpeed = 1; // units per frame
+  const maxSpeed = 1;
   const acceleration = 0.01;
   const friction = 0.02;
   const rotationSpeed = 0.03;
 
-  useFrame(() => {
-    let x = carPosition[0];
-    let z = carPosition[1];
+
+  useFrame((_, delta) => {
+
+    setCarVelocity(velocity.current);
+
+    let x = targetPosition.current.x;
+    let z = targetPosition.current.z;
 
     // Accelerate or brake
     if (controls.forward) velocity.current += acceleration;
     else if (controls.backward) velocity.current -= acceleration;
-    else velocity.current *= 1 - friction; // natural slow down
+    else velocity.current *= 1 - friction;
 
     // Clamp speed
-    if (velocity.current > maxSpeed) velocity.current = maxSpeed;
-    if (velocity.current < -maxSpeed / 2) velocity.current = -maxSpeed / 2; // backward slower
+    velocity.current = THREE.MathUtils.clamp(velocity.current, -maxSpeed / 2, maxSpeed);
 
     // Rotate car
     if (controls.left) rotation.current += rotationSpeed * (velocity.current >= 0 ? 1 : -1);
@@ -41,13 +46,19 @@ export default function Car({ rotationRef }) {
     x += direction.x * velocity.current;
     z += direction.z * velocity.current;
 
-    setCarPosition([x, z]);
+    targetPosition.current.set(x, 1.3, z);
 
-    // Update mesh
+    // Smooth transition between frames (LERP)
+    smoothPosition.current.lerp(targetPosition.current, 0.15);
+
+    // Update mesh position
     if (mesh.current) {
-      mesh.current.position.set(x, 1.3, z);
-      mesh.current.rotation.y = rotation.current;
+      mesh.current.position.copy(smoothPosition.current);
+      mesh.current.rotation.y = THREE.MathUtils.lerp(mesh.current.rotation.y, rotation.current, 0.2);
     }
+
+    // Update game state position
+    setCarPosition([targetPosition.current.x, targetPosition.current.z]);
   });
 
   return <primitive ref={mesh} object={gltf.scene} scale={0.025} />;

@@ -9,6 +9,7 @@ import { useRef } from "react";
 import { useGLTF } from "@react-three/drei";
 import AnimatedSky from "./components/AnimatedSky";
 import Timer from "./components/Timer";
+import StartMenu from "./components/StartMenu";
 
 // Preload models
 useGLTF.preload("/models/car.glb");
@@ -51,6 +52,8 @@ export default function App() {
     <GameProvider>
       <HUD />           {/* HUD can also use useGame() safely */}
       <GameCanvas />    {/* everything that uses useGame() */}
+        <StartMenu />  {/* 👈 new */}
+
     </GameProvider>
   );
 }
