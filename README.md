@@ -13,4 +13,4 @@ Doesn't support mobile version.
 
 #
 
-Link to the Race [Car Game](https://car-game-eosin-one.vercel.app)
+Link to the Race [Car Game](https://car-game-eosin-one.vercel.app){:target="_blank"}
