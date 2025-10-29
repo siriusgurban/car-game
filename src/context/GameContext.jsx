@@ -56,7 +56,7 @@ export const GameProvider = ({ children }) => {
     setCarVelocity(0);
 
     // Optional: instead of reload, reset state properly
-    // window.location.reload(); // You can still keep it if needed
+    window.location.reload(); // You can still keep it if needed
   }, []);
 
   return (
